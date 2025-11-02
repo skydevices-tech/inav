@@ -217,7 +217,7 @@ static void crsfFrameGps(sbuf_t *dst)
     crsfSerialize32(dst, gpsSol.llh.lon);
     crsfSerialize16(dst, (gpsSol.groundSpeed * 36 + 50) / 100); // gpsSol.groundSpeed is in cm/s
     crsfSerialize16(dst, DECIDEGREES_TO_CENTIDEGREES(gpsSol.groundCourse)); // gpsSol.groundCourse is 0.1 degrees, need 0.01 deg
-    crsfSerialize16(dst, gpsSol.llh.alt / 100 + 1000);
+    crsfSerialize16(dst, (uint16_t)(telemetryConfig()->crsf_use_legacy_baro_packet ? getEstimatedActualPosition(Z) : gpsSol.llh.alt ) / 100 + 1000);
     crsfSerialize8(dst, gpsSol.numSat);
 }
 
@@ -272,7 +272,7 @@ Payload:
 uint16_t    altitude_packed ( dm - 10000 )
 int16_t     vario_packed
 */
-static void crsfBarometerAltitudeVario(sbuf_t *dst)
+static void crsfFrameBarometerAltitudeVarioSensor(sbuf_t *dst)
 {
     int32_t altitude_dm = lrintf(getEstimatedActualPosition(Z) / 10);
     uint16_t altitude_packed;
@@ -291,15 +291,11 @@ static void crsfBarometerAltitudeVario(sbuf_t *dst)
     float vario_sm = getEstimatedActualVelocity(Z);
     int8_t sign = vario_sm < 0 ? -1 : ( vario_sm > 0 ? 1 : 0 );
     int8_t vario_packed = (int8_t)constrain( lrintf(__builtin_logf(ABS(vario_sm) / VARIO_KL + 1) / VARIO_KR * sign ), SCHAR_MIN, SCHAR_MAX );
-    
-    // EdgeTX / ELRS historical standart
-    // int16_t vario_sm = lrintf(getEstimatedActualVelocity(Z));  
 
     sbufWriteU8(dst, CRSF_FRAME_BAROMETER_ALTITUDE_VARIO_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     crsfSerialize8(dst, CRSF_FRAMETYPE_BAROMETER_ALTITUDE_VARIO);
     crsfSerialize16(dst, altitude_packed);
     crsfSerialize8(dst, vario_packed); // TBS CRSF standard
-    //crsfSerialize16(dst, vario_sm); // EdgeTX / ELRS historical standard
 }
 
 
@@ -536,9 +532,9 @@ static void processCrsf(void)
     }
 #endif
 #if defined(USE_BARO) || defined(USE_GPS)
-    if (currentSchedule & BV(CRSF_FRAME_BAROMETER_ALTITUDE_VARIO_INDEX)) {
+    if (currentSchedule & ( BV(CRSF_FRAME_VARIO_SENSOR_INDEX) || BV(CRSF_FRAME_BAROMETER_ALTITUDE_VARIO_INDEX) ) ) {
         crsfInitializeFrame(dst);
-        crsfBarometerAltitudeVario(dst);
+        telemetryConfig()->crsf_use_legacy_baro_packet ? crsfFrameVarioSensor(dst)  : crsfFrameBarometerAltitudeVarioSensor(dst);
         crsfFinalize(dst);
     }
 #endif
@@ -580,7 +576,7 @@ void initCrsfTelemetry(void)
 #endif
 #if defined(USE_BARO) || defined(USE_GPS)
     if (sensors(SENSOR_BARO) || (STATE(FIXED_WING_LEGACY) && feature(FEATURE_GPS))) {
-        crsfSchedule[index++] = BV(CRSF_FRAME_BAROMETER_ALTITUDE_VARIO_INDEX);
+        crsfSchedule[index++] = telemetryConfig()->crsf_use_legacy_baro_packet ? BV(CRSF_FRAME_VARIO_SENSOR_INDEX) : BV(CRSF_FRAME_BAROMETER_ALTITUDE_VARIO_INDEX);
     }
 #endif
 #ifdef USE_PITOT
