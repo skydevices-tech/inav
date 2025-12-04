@@ -321,7 +321,6 @@ static void crsfFrameAirSpeedSensor(sbuf_t *dst)
     crsfSerialize16(dst, (uint16_t)(getAirspeedEstimate() * 36 / 100));
 }
 
-CRSF_FRAMETYPE_AIRSPEED_SENSOR
 
 typedef enum {
     CRSF_ACTIVE_ANTENNA1 = 0,
@@ -490,9 +489,8 @@ typedef enum {
     CRSF_FRAME_BATTERY_SENSOR_INDEX,
     CRSF_FRAME_FLIGHT_MODE_INDEX,
     CRSF_FRAME_GPS_INDEX,
-    CRSF_FRAME_VARIO_SENSOR_INDEX,
-    CRSF_FRAME_BAROMETER_ALTITUDE_VARIO_INDEX,
-    CRSF_FRAME_AIRSPEED_INDEX,
+    CRSF_FRAME_VARIO_OR_ALT_VARIO_SENSOR_INDEX,
+    CRSF_FRAME_AIRSPEED_SENSOR_INDEX,
     CRSF_SCHEDULE_COUNT_MAX
 } crsfFrameTypeIndex_e;
 
@@ -570,7 +568,6 @@ static void processCrsf(void)
 #if defined(USE_PITOT)
     if (currentSchedule & BV(CRSF_FRAME_AIRSPEED_SENSOR_INDEX)) {
         crsfInitializeFrame(dst);
-        crsfBarometerAltitude(dst);
         crsfFrameAirSpeedSensor(dst);
         crsfFinalize(dst);
     }
