@@ -339,6 +339,7 @@ typedef enum {
     OSD_V_DIST_TO_FENCE,
     OSD_NAV_FW_ALT_CONTROL_RESPONSE,
     OSD_NAV_MIN_GROUND_SPEED,
+    OSD_THROTTLE_GAUGE,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -502,7 +503,7 @@ typedef struct osdConfig_s {
     uint8_t         right_sidebar_scroll_step;          // Same as left_sidebar_scroll_step, but for the right sidebar.
     bool            osd_home_position_arm_screen;
     uint8_t         pan_servo_index;                    // Index of the pan servo used for home direction offset
-    int8_t          pan_servo_pwm2centideg;             // Centidegrees of servo rotation per us pwm
+    int8_t          osd_pan_servo_range_decadegrees;    // Decadegrees of servo rotation
     uint8_t         pan_servo_offcentre_warning;        // Degrees around the centre, that is assumed camera is wanted to be facing forwards, but isn't centred
     bool            pan_servo_indicator_show_degrees;   // Show the degrees of offset for the pan servo
     uint8_t         crsf_lq_format;
@@ -545,6 +546,10 @@ PG_DECLARE(osdConfig_t, osdConfig);
 
 typedef struct displayPort_s displayPort_t;
 typedef struct displayCanvas_s displayCanvas_t;
+
+void osdDrawCustomItem(uint8_t item);
+void osdEraseCustomItem(uint8_t item);
+unsigned getCurrentLayout(void);
 
 void osdInit(displayPort_t *osdDisplayPort);
 bool osdDisplayIsPAL(void);
