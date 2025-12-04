@@ -306,6 +306,21 @@ static void crsfFrameBarometerAltitudeVarioSensor(sbuf_t *dst)
     crsfSerialize8(dst, vario_packed);
 }
 
+/*
+0x0A Airspeed sensor
+Payload:
+int16      Air speed ( dm/s )
+*/
+static void crsfFrameAirSpeedSensor(sbuf_t *dst)
+{
+    // use sbufWrite since CRC does not include frame length
+    sbufWriteU8(dst, CRSF_FRAME_AIRSPEED_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    crsfSerialize8(dst, CRSF_FRAMETYPE_AIRSPEED_SENSOR);
+    crsfSerialize16(dst, (uint16_t)(getAirspeedEstimate() * 36 / 100));
+}
+
+CRSF_FRAMETYPE_AIRSPEED_SENSOR
+
 typedef enum {
     CRSF_ACTIVE_ANTENNA1 = 0,
     CRSF_ACTIVE_ANTENNA2 = 1
@@ -548,6 +563,14 @@ static void processCrsf(void)
         telemetryConfig()->crsf_use_legacy_baro_packet ? crsfFrameVarioSensor(dst) : crsfFrameBarometerAltitudeVarioSensor(dst);
         crsfFinalize(dst);
     }
+#if defined(USE_PITOT)
+    if (currentSchedule & BV(CRSF_FRAME_AIRSPEED_SENSOR_INDEX)) {
+        crsfInitializeFrame(dst);
+        crsfBarometerAltitude(dst);
+        crsfFrameAirSpeedSensor(dst);
+        crsfFinalize(dst);
+    }
+#endif
 #endif
     crsfScheduleIndex = (crsfScheduleIndex + 1) % crsfScheduleCount;
 }
@@ -660,6 +683,9 @@ int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType)
         break;
     case CRSF_FRAMETYPE_BAROMETER_ALTITUDE_VARIO_SENSOR:
         crsfFrameBarometerAltitudeVarioSensor(sbuf);
+        break;
+    case CRSF_FRAMETYPE_AIRSPEED_SENSOR:
+        crsfFrameAirSpeedSensor(sbuf);
         break;
     }  
     const int frameSize = crsfFinalizeBuf(sbuf, frame);
