@@ -198,7 +198,7 @@ Total gyro rotation rate threshold [deg/s] before scaling to consider accelerome
 
 | Default | Min | Max |
 | --- | --- | --- |
-| 20 | 0 | 30 |
+| 15 | 0 | 30 |
 
 ---
 
@@ -579,16 +579,6 @@ Blackbox logging rate numerator. Use num/denom settings to decide if a frame sho
 | Default | Min | Max |
 | --- | --- | --- |
 | 1 | 1 | 65535 |
-
----
-
-### controlrate_profile
-
-Control rate profile to switch to when the battery profile is selected, 0 to disable and keep the currently selected control rate profile
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 0 | 0 | 3 |
 
 ---
 
@@ -3002,9 +2992,9 @@ If set to on, This mixer_profile will try to switch to another mixer_profile whe
 
 ---
 
-### mixer_pid_profile_linking
+### mixer_control_profile_linking
 
-If enabled, pid profile_index will follow mixer_profile index. Set to OFF(default) if you want to handle PID profile by your self. Recommend to set to ON on all mixer_profiles to let the mixer_profile handle the PID profile switching on a VTOL or mixed platform type setup.
+If enabled, control_profile_index will follow mixer_profile index. Set to OFF(default) if you want to handle control_profile by your self. Recommend to set to ON on all mixer_profiles to let the mixer_profile handle the control_profile switching on a VTOL or mixed platform type setup.
 
 | Default | Min | Max |
 | --- | --- | --- |
@@ -5348,7 +5338,7 @@ Value below which Crossfire SNR Alarm pops-up. (dB)
 
 | Default | Min | Max |
 | --- | --- | --- |
-| 4 | -20 | 99 |
+| 4 | -20 | 30 |
 
 ---
 
@@ -6539,6 +6529,16 @@ Time zone offset from UTC, in minutes. This is applied to the GPS time for loggi
 | Default | Min | Max |
 | --- | --- | --- |
 | 0 | -720 | 840 |
+
+---
+
+### use_control_profile
+
+Control profile to switch to when the battery profile is selected, 0 to disable and keep the currently selected control profile
+
+| Default | Min | Max |
+| --- | --- | --- |
+| 0 | 0 | 3 |
 
 ---
 

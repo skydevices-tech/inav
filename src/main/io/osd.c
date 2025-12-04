@@ -78,7 +78,7 @@
 #include "io/osd/custom_elements.h"
 
 #include "fc/config.h"
-#include "fc/controlrate_profile.h"
+#include "fc/control_profile.h"
 #include "fc/fc_core.h"
 #include "fc/fc_tasks.h"
 #include "fc/multifunction.h"
@@ -2736,14 +2736,11 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_SNR_DB:
         {
-            static pt1Filter_t snrFilterState;
-            static timeMs_t snrUpdated = 0;
-            int8_t snrFiltered = pt1FilterApply4(&snrFilterState, rxLinkStatistics.uplinkSNR, 0.5f, MS2S(millis() - snrUpdated));
-            snrUpdated = millis();
+            int8_t snrVal = rxLinkStatistics.uplinkSNR;
 
             const char* showsnr = "-20";
             const char* hidesnr = "   ";
-            if (snrFiltered > osdConfig()->snr_alarm) {
+            if (snrVal > osdConfig()->snr_alarm) {
                 if (cmsInMenu) {
                     buff[0] = SYM_SNR;
                     tfp_sprintf(buff + 1, "%s%c", showsnr, SYM_DB);
@@ -2751,12 +2748,12 @@ static bool osdDrawSingleElement(uint8_t item)
                     buff[0] = SYM_BLANK;
                     tfp_sprintf(buff + 1, "%s%c", hidesnr, SYM_BLANK);
                 }
-            } else if (snrFiltered <= osdConfig()->snr_alarm) {
+            } else if (snrVal <= osdConfig()->snr_alarm) {
                 buff[0] = SYM_SNR;
-                if (snrFiltered <= -10 || snrFiltered >= 10) {
-                    tfp_sprintf(buff + 1, "%3d%c", snrFiltered, SYM_DB);
+                if (snrVal <= -10) {
+                    tfp_sprintf(buff + 1, "%3d%c", snrVal, SYM_DB);
                 } else {
-                    tfp_sprintf(buff + 1, " %2d%c", snrFiltered, SYM_DB);
+                    tfp_sprintf(buff + 1, "%2d%c%c", snrVal, SYM_DB, ' ');
                 }
             }
             break;
@@ -3281,22 +3278,22 @@ static bool osdDrawSingleElement(uint8_t item)
         return true;
 
     case OSD_RC_EXPO:
-        osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "EXP", 0, currentControlRateProfile->stabilized.rcExpo8, 3, 0, ADJUSTMENT_RC_EXPO);
+        osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "EXP", 0, currentControlProfile->stabilized.rcExpo8, 3, 0, ADJUSTMENT_RC_EXPO);
         return true;
 
     case OSD_RC_YAW_EXPO:
-        osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "YEX", 0, currentControlRateProfile->stabilized.rcYawExpo8, 3, 0, ADJUSTMENT_RC_YAW_EXPO);
+        osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "YEX", 0, currentControlProfile->stabilized.rcYawExpo8, 3, 0, ADJUSTMENT_RC_YAW_EXPO);
         return true;
 
     case OSD_THROTTLE_EXPO:
-        osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "TEX", 0, currentControlRateProfile->throttle.rcExpo8, 3, 0, ADJUSTMENT_THROTTLE_EXPO);
+        osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "TEX", 0, currentControlProfile->throttle.rcExpo8, 3, 0, ADJUSTMENT_THROTTLE_EXPO);
         return true;
 
     case OSD_PITCH_RATE:
         displayWrite(osdDisplayPort, elemPosX, elemPosY, "SPR");
 
         elemAttr = TEXT_ATTRIBUTES_NONE;
-        tfp_sprintf(buff, "%3d", currentControlRateProfile->stabilized.rates[FD_PITCH]);
+        tfp_sprintf(buff, "%3d", currentControlProfile->stabilized.rates[FD_PITCH]);
         if (isAdjustmentFunctionSelected(ADJUSTMENT_PITCH_RATE) || isAdjustmentFunctionSelected(ADJUSTMENT_PITCH_ROLL_RATE))
             TEXT_ATTRIBUTES_ADD_BLINK(elemAttr);
         displayWriteWithAttr(osdDisplayPort, elemPosX + 4, elemPosY, buff, elemAttr);
@@ -3306,29 +3303,29 @@ static bool osdDrawSingleElement(uint8_t item)
         displayWrite(osdDisplayPort, elemPosX, elemPosY, "SRR");
 
         elemAttr = TEXT_ATTRIBUTES_NONE;
-        tfp_sprintf(buff, "%3d", currentControlRateProfile->stabilized.rates[FD_ROLL]);
+        tfp_sprintf(buff, "%3d", currentControlProfile->stabilized.rates[FD_ROLL]);
         if (isAdjustmentFunctionSelected(ADJUSTMENT_ROLL_RATE) || isAdjustmentFunctionSelected(ADJUSTMENT_PITCH_ROLL_RATE))
             TEXT_ATTRIBUTES_ADD_BLINK(elemAttr);
         displayWriteWithAttr(osdDisplayPort, elemPosX + 4, elemPosY, buff, elemAttr);
         return true;
 
     case OSD_YAW_RATE:
-        osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "SYR", 0, currentControlRateProfile->stabilized.rates[FD_YAW], 3, 0, ADJUSTMENT_YAW_RATE);
+        osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "SYR", 0, currentControlProfile->stabilized.rates[FD_YAW], 3, 0, ADJUSTMENT_YAW_RATE);
         return true;
 
     case OSD_MANUAL_RC_EXPO:
-        osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "MEX", 0, currentControlRateProfile->manual.rcExpo8, 3, 0, ADJUSTMENT_MANUAL_RC_EXPO);
+        osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "MEX", 0, currentControlProfile->manual.rcExpo8, 3, 0, ADJUSTMENT_MANUAL_RC_EXPO);
         return true;
 
     case OSD_MANUAL_RC_YAW_EXPO:
-        osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "MYX", 0, currentControlRateProfile->manual.rcYawExpo8, 3, 0, ADJUSTMENT_MANUAL_RC_YAW_EXPO);
+        osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "MYX", 0, currentControlProfile->manual.rcYawExpo8, 3, 0, ADJUSTMENT_MANUAL_RC_YAW_EXPO);
         return true;
 
     case OSD_MANUAL_PITCH_RATE:
         displayWrite(osdDisplayPort, elemPosX, elemPosY, "MPR");
 
         elemAttr = TEXT_ATTRIBUTES_NONE;
-        tfp_sprintf(buff, "%3d", currentControlRateProfile->manual.rates[FD_PITCH]);
+        tfp_sprintf(buff, "%3d", currentControlProfile->manual.rates[FD_PITCH]);
         if (isAdjustmentFunctionSelected(ADJUSTMENT_MANUAL_PITCH_RATE) || isAdjustmentFunctionSelected(ADJUSTMENT_MANUAL_PITCH_ROLL_RATE))
             TEXT_ATTRIBUTES_ADD_BLINK(elemAttr);
         displayWriteWithAttr(osdDisplayPort, elemPosX + 4, elemPosY, buff, elemAttr);
@@ -3338,14 +3335,14 @@ static bool osdDrawSingleElement(uint8_t item)
         displayWrite(osdDisplayPort, elemPosX, elemPosY, "MRR");
 
         elemAttr = TEXT_ATTRIBUTES_NONE;
-        tfp_sprintf(buff, "%3d", currentControlRateProfile->manual.rates[FD_ROLL]);
+        tfp_sprintf(buff, "%3d", currentControlProfile->manual.rates[FD_ROLL]);
         if (isAdjustmentFunctionSelected(ADJUSTMENT_MANUAL_ROLL_RATE) || isAdjustmentFunctionSelected(ADJUSTMENT_MANUAL_PITCH_ROLL_RATE))
             TEXT_ATTRIBUTES_ADD_BLINK(elemAttr);
         displayWriteWithAttr(osdDisplayPort, elemPosX + 4, elemPosY, buff, elemAttr);
         return true;
 
     case OSD_MANUAL_YAW_RATE:
-        osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "MYR", 0, currentControlRateProfile->stabilized.rates[FD_YAW], 3, 0, ADJUSTMENT_YAW_RATE);
+        osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "MYR", 0, currentControlProfile->manual.rates[FD_YAW], 3, 0, ADJUSTMENT_MANUAL_YAW_RATE);
         return true;
 
     case OSD_NAV_FW_CRUISE_THR:
@@ -3950,7 +3947,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
             displayWrite(osdDisplayPort, elemPosX, elemPosY, "TPA");
             attr = TEXT_ATTRIBUTES_NONE;
-            tfp_sprintf(buff, "%3d", currentControlRateProfile->throttle.dynPID);
+            tfp_sprintf(buff, "%3d", currentControlProfile->throttle.dynPID);
             if (isAdjustmentFunctionSelected(ADJUSTMENT_TPA)) {
                 TEXT_ATTRIBUTES_ADD_BLINK(attr);
             }
@@ -3958,7 +3955,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
             displayWrite(osdDisplayPort, elemPosX, elemPosY + 1, "BP");
             attr = TEXT_ATTRIBUTES_NONE;
-            tfp_sprintf(buff, "%4d", currentControlRateProfile->throttle.pa_breakpoint);
+            tfp_sprintf(buff, "%4d", currentControlProfile->throttle.pa_breakpoint);
             if (isAdjustmentFunctionSelected(ADJUSTMENT_TPA_BREAKPOINT)) {
                 TEXT_ATTRIBUTES_ADD_BLINK(attr);
             }
@@ -3968,7 +3965,7 @@ static bool osdDrawSingleElement(uint8_t item)
         }
     case OSD_TPA_TIME_CONSTANT:
         {
-            osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "TPA TC", 0, currentControlRateProfile->throttle.fixedWingTauMs, 4, 0, ADJUSTMENT_FW_TPA_TIME_CONSTANT);
+            osdDisplayAdjustableDecimalValue(elemPosX, elemPosY, "TPA TC", 0, currentControlProfile->throttle.fixedWingTauMs, 4, 0, ADJUSTMENT_FW_TPA_TIME_CONSTANT);
             return true;
         }
     case OSD_FW_LEVEL_TRIM:
@@ -6596,4 +6593,56 @@ static textAttributes_t osdGetMultiFunctionMessage(char *buff)
     return elemAttr;
 }
 
+void osdDrawCustomItem(uint8_t item){
+    osdDrawSingleElement(item);
+}
+
+void osdEraseCustomItem(uint8_t item){
+    uint8_t customElementIndex = 0;
+
+    uint16_t pos = osdLayoutsConfig()->item_pos[currentLayout][item];
+    uint8_t elemPosX = OSD_X(pos);
+    uint8_t elemPosY = OSD_Y(pos);
+
+    switch(item){
+        case 147:
+            customElementIndex = 0;
+            break;
+        case 148:
+            customElementIndex = 1;
+            break;
+        case 149:
+            customElementIndex = 2;
+            break;
+        case 154:
+            customElementIndex = 3;
+            break;
+        case 155:
+            customElementIndex = 4;
+            break;
+        case 156:
+            customElementIndex = 5;
+            break;
+        case 157:
+            customElementIndex = 6;
+            break;
+        case 158:
+            customElementIndex = 7;
+            break;
+        default:
+            return;
+    }
+
+    uint8_t len = customElementLength(customElementIndex);
+
+    for(uint8_t i = 0; i < len; i++){
+        displayWriteChar(osdDisplayPort, elemPosX+i, elemPosY, SYM_BLANK);
+    }
+
+}
+
 #endif // OSD
+
+unsigned getCurrentLayout(void){
+    return(currentLayout);
+}
